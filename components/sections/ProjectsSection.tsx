@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { projects } from "@/data/projects";
 
 /**
@@ -144,6 +145,7 @@ export function ProjectsSection() {
                     inset: 0,
                     zIndex: 0,
                     pointerEvents: "none",
+                    overflow: "hidden",
                   }}
                 >
                   <motion.div
@@ -156,13 +158,21 @@ export function ProjectsSection() {
                     style={{
                       position: "absolute",
                       inset: 0,
-                      backgroundImage: `url(${project.image})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "top center",
                       width: "100%",
                       height: "100%",
                     }}
-                  />
+                  >
+                    <Image
+                      src={project.image}
+                      alt={project.title}
+                      fill
+                      unoptimized
+                      style={{
+                        objectFit: "cover",
+                        objectPosition: "top center",
+                      }}
+                    />
+                  </motion.div>
                   {/* Subtle Dark Overlay for contrast */}
                   <motion.div
                     initial={{ opacity: 0 }}
