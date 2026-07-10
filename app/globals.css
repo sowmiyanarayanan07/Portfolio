@@ -1,0 +1,264 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --cream: #f0ece4;
+    --cream-dark: #e8e3da;
+    --yellow: #f5e432;
+    --yellow-dark: #e8d72a;
+    --dark: #1e1e1e;
+    --dark-card: #242424;
+    --text-primary: #1a1a1a;
+    --text-light: #f0ece4;
+    --grid-line: rgba(0, 0, 0, 0.07);
+    --font-heading: 'Space Grotesk', 'Helvetica Neue', 'Arial', sans-serif;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--text-primary);
+    font-family: 'Space Grotesk', 'Helvetica Neue', 'Arial', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  ::selection {
+    background: var(--yellow);
+    color: var(--text-primary);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--cream);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+}
+
+/* Custom cursor */
+.cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  background: var(--text-primary);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
+  will-change: left, top;
+}
+
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease;
+  will-change: left, top;
+}
+
+.cursor-dot.hover-active {
+  width: 16px;
+  height: 16px;
+  background: var(--yellow);
+}
+
+.cursor-ring.hover-active {
+  width: 60px;
+  height: 60px;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* Grid overlay pattern */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* Utility animations */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Dotted background pattern */
+.dotted-bg {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Typography */
+.display-xl {
+  font-size: clamp(3.5rem, 10vw, 10rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.display-lg {
+  font-size: clamp(2.5rem, 6vw, 6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.display-md {
+  font-size: clamp(1.8rem, 4vw, 3.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.label-text {
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+/* Pill button */
+.pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 100px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: none;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  border: none;
+}
+
+.pill-btn-yellow {
+  background-color: var(--yellow);
+  color: var(--text-primary);
+}
+
+.pill-btn-yellow:hover {
+  background-color: var(--yellow-dark);
+  transform: scale(1.02);
+}
+
+.pill-btn-dark {
+  background-color: var(--dark);
+  color: var(--text-light);
+}
+
+.pill-btn-dark:hover {
+  background-color: #333;
+}
+
+/* Side badge */
+.side-badge {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Scroll reveal text */
+.scroll-word {
+  display: inline-block;
+  color: rgba(240, 236, 228, 0.18);
+  transition: color 0.3s ease;
+  will-change: color;
+}
+
+/* Project card */
+.project-card-image {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+  opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body {
+    cursor: auto;
+  }
+  .cursor-dot, .cursor-ring {
+    display: none;
+  }
+  .side-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .display-xl {
+    font-size: clamp(2.5rem, 12vw, 5rem);
+  }
+}
