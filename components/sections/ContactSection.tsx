@@ -115,7 +115,7 @@ export function ContactSection() {
         aria-hidden="true"
       >
         <Image
-          src="/avatar.png"
+          src="/Portfolio/avatar.png"
           alt=""
           width={220}
           height={280}

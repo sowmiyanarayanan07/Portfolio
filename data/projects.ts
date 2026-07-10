@@ -59,7 +59,7 @@ export const projects: Project[] = [
       "Developed Civic Resolve AI using Supabase and Gemini AI with AI duplicate complaint detection, real-time complaint reporting, disaster response features, and smart civic issue management.",
     tags: ["Gemini AI", "Supabase", "React", "Full Stack"],
     logo: "/images/project-civic.svg",
-    image: "/civic-resolve-preview.png",
+    image: "/Portfolio/civic-resolve-preview.png",
     link: "https://sowmiyanarayanan07.github.io/civicresolve-ai/#/",
     color: "#f0ece4",
     featured: false,

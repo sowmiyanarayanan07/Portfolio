@@ -226,7 +226,7 @@ export function ServicesSection() {
             style={{ width: "100%", height: "100%", position: "relative" }}
           >
             <Image
-              src="/low mb.png"
+              src="/Portfolio/low mb.png"
               alt="SOWMIYA NARAYANAN S - Aspiring Data Scientist"
               fill
               unoptimized
