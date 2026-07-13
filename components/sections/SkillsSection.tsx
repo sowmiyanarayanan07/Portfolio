@@ -215,9 +215,9 @@ export function SkillsSection() {
               "Machine Learning",
               "Data Analysis",
               "MySQL",
-              "Natural Language Processing",
-              "Deep Learning",
-              "Data Visualization",
+              "Java",
+              "HTML",
+              "CSS",
               "Pandas & NumPy",
             ].map((skill, i) => (
               <motion.li

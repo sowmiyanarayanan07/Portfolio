@@ -19,9 +19,9 @@ export const skills = {
     "Machine Learning",
     "Data Analysis",
     "MySQL",
-    "Natural Language Processing",
-    "Deep Learning",
-    "Data Visualization",
+    "Java",
+    "HTML",
+    "CSS",
     "Pandas & NumPy",
   ],
   soft: [
