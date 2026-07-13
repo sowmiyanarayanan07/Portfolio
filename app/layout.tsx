@@ -3,7 +3,6 @@ import "./globals.css";
 import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import { CustomCursor } from "@/components/layout/CustomCursor";
 import { GridOverlay } from "@/components/layout/GridOverlay";
-import { NomineeBadge } from "@/components/layout/NomineeBadge";
 import { FloatingMenu } from "@/components/layout/FloatingMenu";
 import { LoadingScreen } from "@/components/layout/LoadingScreen";
 
@@ -56,7 +55,6 @@ export default function RootLayout({
           <LoadingScreen />
           <CustomCursor />
           <GridOverlay />
-          <NomineeBadge />
           <FloatingMenu />
           <main>{children}</main>
         </SmoothScrollProvider>

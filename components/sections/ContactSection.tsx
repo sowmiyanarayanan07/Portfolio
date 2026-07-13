@@ -1,17 +1,115 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { KineticTypography } from "@/components/layout/KineticTypography";
 import { personal } from "@/data/personal";
 
-/**
- * ContactSection + FooterSection combined.
- * Yellow background with large name as watermark text behind a pixel-art character.
- * "Let's build something MEANINGFUL AND MEMORABLE" CTA.
- * Social links and footer credits.
- */
+interface Particle {
+  originX: number;
+  originY: number;
+  driftX: number;
+  driftY: number;
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+  size: number;
+}
+
 export function ContactSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Element Refs for geometry tracking in custom canvas drawing
+  const subTextRef = useRef<HTMLParagraphElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const avatarRef = useRef<HTMLImageElement>(null);
+  const reachOutRef = useRef<HTMLParagraphElement>(null);
+  const socialsRef = useRef<HTMLDivElement>(null);
+  const watermarkRef = useRef<HTMLDivElement>(null);
+
+  const [isCapturing, setIsCapturing] = useState(true);
+  const [isCaptured, setIsCaptured] = useState(false);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  
+  // High performance animation refs (avoid React renders during scroll)
+  const scrollRatioRef = useRef(0);
+  const showHTMLRef = useRef(true);
+  const [showHTML, setShowHTML] = useState(true);
+  
+  const avatarImgRef = useRef<HTMLImageElement | null>(null);
+
+  const sectionTopRef = useRef<number>(0);
+  const sectionHeightRef = useRef<number>(0);
+
+  // Update layout bounds for scroll calculations (avoids calling getBoundingClientRect in rAF)
+  useEffect(() => {
+    const updateBounds = () => {
+      const target = sectionRef.current;
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        const scrollY = window.scrollY;
+        sectionTopRef.current = rect.top + scrollY;
+        sectionHeightRef.current = rect.height;
+      }
+    };
+
+    updateBounds();
+    const t1 = setTimeout(updateBounds, 500);
+    const t2 = setTimeout(updateBounds, 1500);
+
+    window.addEventListener("resize", updateBounds, { passive: true });
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener("resize", updateBounds);
+    };
+  }, []);
+
+  // Butter-smooth passive scroll listener to update scroll progress
+  useEffect(() => {
+    const handleScroll = () => {
+      const sectionTop = sectionTopRef.current;
+      const sectionHeight = sectionHeightRef.current;
+      if (sectionHeight === 0) return;
+
+      const viewportHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const scrollY = window.scrollY;
+
+      const scrollStart = sectionTop - viewportHeight;
+      const scrollEnd = docHeight - viewportHeight;
+
+      let t = 1.0;
+      if (scrollEnd > scrollStart) {
+        const progress = (scrollY - scrollStart) / (scrollEnd - scrollStart);
+        t = Math.max(0, Math.min(1, progress));
+      }
+      scrollRatioRef.current = t;
+
+      if (t >= 0.98) {
+        if (!showHTMLRef.current) {
+          showHTMLRef.current = true;
+          setShowHTML(true);
+        }
+      } else {
+        if (showHTMLRef.current) {
+          showHTMLRef.current = false;
+          setShowHTML(false);
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   const socialLinks = [
     {
       icon: "github",
@@ -36,18 +134,315 @@ export function ContactSection() {
     },
   ];
 
+  // Helper: calculate absolute coords of elements relative to Contact Section
+  const getRelativeCoords = (el: HTMLElement) => {
+    const parent = sectionRef.current;
+    if (!parent) return { x: 0, y: 0, w: 0, h: 0 };
+    const parentRect = parent.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    return {
+      x: rect.left - parentRect.left,
+      y: rect.top - parentRect.top,
+      w: rect.width,
+      h: rect.height,
+    };
+  };
+
+  // Custom 2D canvas drawing routine instead of html2canvas (avoids stylesheet locks and timeouts)
+  // Returns true if successfully captured layout metrics and compiled non-zero particles
+  const initializeParticles = (): boolean => {
+    console.log("ContactSection: initializeParticles started");
+    const parent = sectionRef.current;
+    if (!parent || !canvasRef.current) {
+      console.warn("ContactSection: parent or canvas ref missing during init");
+      return false;
+    }
+
+    const parentRect = parent.getBoundingClientRect();
+    const width = parentRect.width;
+    const height = parentRect.height;
+    console.log("ContactSection: parent bounds:", width, height);
+
+    if (width === 0 || height === 0) {
+      console.warn("ContactSection: Section width or height is 0, retrying");
+      return false;
+    }
+
+    // Sync canvas resolution
+    const displayCanvas = canvasRef.current;
+    displayCanvas.width = width;
+    displayCanvas.height = height;
+
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const ctx = tempCanvas.getContext("2d");
+    if (!ctx) {
+      console.warn("ContactSection: 2d context missing");
+      return false;
+    }
+
+    ctx.clearRect(0, 0, width, height);
+
+    // 0. Draw Watermark Letters
+    const watermark = watermarkRef.current;
+    if (watermark) {
+      const letters = watermark.querySelectorAll("span");
+      letters.forEach((letter) => {
+        if (letter.textContent && letter.textContent.trim()) {
+          const coords = getRelativeCoords(letter);
+          const style = window.getComputedStyle(letter);
+          ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+          ctx.fillStyle = style.color;
+          ctx.textBaseline = "top";
+          ctx.fillText(letter.textContent, coords.x, coords.y);
+        }
+      });
+    }
+
+    // 1. Draw Avatar Image
+    const avatar = avatarRef.current;
+    if (avatar) {
+      const coords = getRelativeCoords(avatar);
+      if (avatarImgRef.current && avatarImgRef.current.complete) {
+        ctx.drawImage(avatarImgRef.current, coords.x, coords.y, coords.w, coords.h);
+        console.log("ContactSection: avatar drawn to canvas");
+      } else {
+        console.warn("ContactSection: avatarImgRef not complete during drawing");
+      }
+    }
+
+    // 2. Draw Subtitle Paragraph: "Let's build something"
+    const subText = subTextRef.current;
+    if (subText) {
+      const coords = getRelativeCoords(subText);
+      const style = window.getComputedStyle(subText);
+      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      ctx.fillStyle = style.color;
+      ctx.textBaseline = "top";
+      ctx.fillText("Let's build something", coords.x, coords.y);
+      console.log("ContactSection: subText drawn:", coords);
+    }
+
+    // 3. Draw Main Heading: "MEANINGFUL" and "AND MEMORABLE"
+    const heading = headingRef.current;
+    if (heading) {
+      const coords = getRelativeCoords(heading);
+      const style = window.getComputedStyle(heading);
+      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      ctx.fillStyle = style.color;
+      ctx.textBaseline = "top";
+      const fontSizePx = parseFloat(style.fontSize);
+      ctx.fillText("MEANINGFUL", coords.x, coords.y);
+      ctx.fillText("AND MEMORABLE", coords.x, coords.y + fontSizePx * 1.05);
+      console.log("ContactSection: heading drawn:", coords);
+    }
+
+    // 4. Draw Right Label: "Reach out"
+    const reachOut = reachOutRef.current;
+    if (reachOut) {
+      const coords = getRelativeCoords(reachOut);
+      const style = window.getComputedStyle(reachOut);
+      ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      ctx.fillStyle = style.color;
+      ctx.textBaseline = "top";
+      ctx.textAlign = "right";
+      ctx.fillText("Reach out", coords.x + coords.w, coords.y);
+      ctx.textAlign = "left"; // reset align
+      console.log("ContactSection: reachOut drawn:", coords);
+    }
+
+    // 5. Draw Social Badges (represent as filled dark circles)
+    const socials = socialsRef.current;
+    if (socials) {
+      const badges = socials.querySelectorAll("a");
+      badges.forEach((badge, idx) => {
+        const coords = getRelativeCoords(badge);
+        const radius = coords.w / 2;
+        ctx.beginPath();
+        ctx.arc(coords.x + radius, coords.y + radius, radius, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fill();
+        console.log(`ContactSection: badge ${idx} drawn:`, coords);
+      });
+    }
+
+    // Extract compiled pixel coordinates (entire section is filled now!)
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+    const tempParticles: Particle[] = [];
+    const step = 4;
+
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const a = data[idx + 3];
+
+        if (a > 10) {
+          // Thanos snap drift: blow horizontally right and float vertically upwards
+          const driftX = (0.3 + Math.random() * 0.7) * 260; // drift right (between 78px and 260px)
+          const driftY = -(0.4 + Math.random() * 0.6) * 180; // float up (between -72px and -180px)
+
+          tempParticles.push({
+            originX: x,
+            originY: y,
+            driftX,
+            driftY,
+            r,
+            g,
+            b,
+            a: a / 255,
+            size: step - 1.2,
+          });
+        }
+      }
+    }
+
+    console.log("ContactSection: particle count generated:", tempParticles.length);
+
+    if (tempParticles.length > 100) {
+      setParticles(tempParticles);
+      setIsCaptured(true);
+      setIsCapturing(false);
+      console.log("ContactSection: particles set successfully, isCaptured = true");
+      return true;
+    }
+
+    console.warn("ContactSection: particle count too low, retrying");
+    return false;
+  };
+
+  // Mount logic: Preload avatar and trigger capture
+  // Retries repeatedly (self-healing loop) in case of loading screen or layout delay
+  useEffect(() => {
+    let hasInit = false;
+    let attempts = 0;
+    const maxAttempts = 15; // retry for up to 7.5 seconds
+
+    const runInit = () => {
+      if (hasInit) return;
+      
+      const success = initializeParticles();
+      if (success) {
+        hasInit = true;
+      } else {
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(runInit, 500); // retry in 500ms
+        } else {
+          console.warn("ContactSection: Failed to compile particles after multiple retries. Using static layout.");
+          setIsCapturing(false);
+        }
+      }
+    };
+
+    const img = new window.Image();
+    img.src = "/Portfolio/avatar.png";
+    img.onload = () => {
+      avatarImgRef.current = img;
+      runInit();
+    };
+    img.onerror = () => {
+      console.warn("Avatar failed to load. Running init.");
+      runInit();
+    };
+
+    // Safety fallback trigger in case image load event hangs
+    const safetyTimer = setTimeout(runInit, 1500);
+
+    return () => {
+      clearTimeout(safetyTimer);
+    };
+  }, []);
+
+  // Butter-smooth canvas drawing loop (60fps utilizing standard requestAnimationFrame)
+  useEffect(() => {
+    if (!isCaptured || particles.length === 0) return;
+
+    let animFrameId: number;
+    let isIntersecting = false;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    const tick = () => {
+      if (!isIntersecting) return;
+
+      const ratio = scrollRatioRef.current;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      // If fully scrolled in, render standard static HTML (hide canvas)
+      if (ratio >= 0.98) {
+        animFrameId = requestAnimationFrame(tick);
+        return;
+      }
+
+      // Draw particle positions linked to scroll ratio
+      // Particle drift uses an ease-in calculation: (1 - ratio)^1.6
+      const factor = Math.pow(1 - ratio, 1.6);
+
+      particles.forEach((p) => {
+        const dx = p.driftX * factor + Math.sin(p.originY + ratio * 8) * 12 * factor;
+        const dy = p.driftY * factor + Math.cos(p.originX + ratio * 8) * 12 * factor;
+
+        const currentX = p.originX + dx;
+        const currentY = p.originY + dy;
+
+        ctx.fillStyle = `rgba(${p.r}, ${p.g}, ${p.b}, ${p.a * ratio})`;
+        ctx.fillRect(currentX, currentY, p.size, p.size);
+      });
+
+      animFrameId = requestAnimationFrame(tick);
+    };
+
+    // Pause/Play animation frame loop based on viewport intersection
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting) {
+          cancelAnimationFrame(animFrameId);
+          tick();
+        } else {
+          cancelAnimationFrame(animFrameId);
+        }
+      },
+      { threshold: 0.01 }
+    );
+
+    const targetSection = sectionRef.current;
+    if (targetSection) {
+      observer.observe(targetSection);
+    }
+
+    return () => {
+      cancelAnimationFrame(animFrameId);
+      observer.disconnect();
+    };
+  }, [isCaptured, particles]);
+
   return (
     <section
+      ref={sectionRef}
       id="contact"
       style={{
-        backgroundColor: "var(--yellow)",
         position: "relative",
         overflow: "hidden",
         zIndex: 2,
         minHeight: "80vh",
+        backgroundColor: "var(--yellow)", // Parent section is solid yellow static background
       }}
     >
-      {/* Dotted background */}
+      {/* Dotted background pattern now stays static on the parent */}
       <div
         className="dotted-bg"
         style={{
@@ -55,191 +450,208 @@ export function ContactSection() {
           inset: 0,
           opacity: 0.3,
           pointerEvents: "none",
+          zIndex: 1,
         }}
         aria-hidden="true"
       />
 
-      {/* Giant watermark name behind content */}
-      <div
-        aria-hidden="true"
+      {/* Thanos snap canvas overlay */}
+      <canvas
+        ref={canvasRef}
         style={{
           position: "absolute",
           top: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
+          left: 0,
           width: "100%",
-          textAlign: "center",
+          height: "100%",
+          zIndex: 4,
           pointerEvents: "none",
-          overflow: "hidden",
+          display: (isCaptured && !showHTML) ? "block" : "none",
         }}
-      >
-        <KineticTypography
-          text="SOWMIYA"
-          style={{ display: "flex", width: "100%", justifyContent: "center" }}
-          letterStyle={{
-            fontSize: "clamp(4rem, 14vw, 16rem)",
-            fontWeight: "900",
-            color: "rgba(0,0,0,0.08)",
-            letterSpacing: "-0.03em",
-            lineHeight: 0.85,
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-          }}
-        />
-        <KineticTypography
-          text="NARAYANAN S"
-          style={{ display: "flex", width: "100%", justifyContent: "center" }}
-          letterStyle={{
-            fontSize: "clamp(4rem, 14vw, 16rem)",
-            fontWeight: "900",
-            color: "rgba(0,0,0,0.08)",
-            letterSpacing: "-0.03em",
-            lineHeight: 0.85,
-            textTransform: "uppercase",
-            whiteSpace: "nowrap",
-          }}
-        />
-      </div>
+      />
 
-      {/* Pixel avatar */}
+      {/* Main HTML CTA Content */}
       <div
+        ref={contentRef}
         style={{
-          position: "absolute",
-          bottom: "30%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "clamp(120px, 15vw, 220px)",
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-        aria-hidden="true"
-      >
-        <Image
-          src="/Portfolio/avatar.png"
-          alt=""
-          width={220}
-          height={280}
-          style={{ width: "100%", height: "auto", objectFit: "contain" }}
-        />
-      </div>
-
-      {/* CTA content */}
-      <div
-        style={{
+          opacity: (isCapturing || showHTML) ? 1 : 0,
+          pointerEvents: showHTML ? "all" : "none",
+          transition: "opacity 0.25s ease-out",
+          width: "100%",
+          height: "100%",
+          minHeight: "80vh",
           position: "relative",
           zIndex: 2,
-          maxWidth: "1400px",
-          margin: "0 auto",
-          padding: "4rem clamp(1.5rem, 5vw, 4rem)",
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "80vh",
-          justifyContent: "flex-end",
+          backgroundColor: "transparent", // Transparent background so static parent yellow is visible
         }}
       >
+
+        {/* Giant watermark name behind content */}
         <div
+          ref={watermarkRef}
+          aria-hidden="true"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            flexWrap: "wrap",
-            gap: "2rem",
+            position: "absolute",
+            top: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
             width: "100%",
+            textAlign: "center",
+            pointerEvents: "none",
+            overflow: "hidden",
           }}
         >
-          {/* Left: CTA text */}
-          <div>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              style={{
-                fontSize: "1rem",
-                fontWeight: "400",
-                color: "rgba(0,0,0,0.7)",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Let's build something
-            </motion.p>
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="display-md"
-              style={{ color: "var(--text-primary)", lineHeight: 1 }}
-            >
-              MEANINGFUL
-              <br />
-              AND MEMORABLE
-            </motion.h2>
-          </div>
+          <KineticTypography
+            text="SOWMIYA"
+            style={{ display: "flex", width: "100%", justifyContent: "center" }}
+            letterStyle={{
+              fontSize: "clamp(4rem, 14vw, 16rem)",
+              fontWeight: "900",
+              color: "rgba(0,0,0,0.08)",
+              letterSpacing: "-0.03em",
+              lineHeight: 0.85,
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          />
+          <KineticTypography
+            text="NARAYANAN S"
+            style={{ display: "flex", width: "100%", justifyContent: "center" }}
+            letterStyle={{
+              fontSize: "clamp(4rem, 14vw, 16rem)",
+              fontWeight: "900",
+              color: "rgba(0,0,0,0.08)",
+              letterSpacing: "-0.03em",
+              lineHeight: 0.85,
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          />
+        </div>
 
-          {/* Right: Social links */}
-          <div style={{ textAlign: "right" }}>
-            <motion.p
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              style={{
-                fontSize: "0.8rem",
-                color: "rgba(0,0,0,0.5)",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                marginBottom: "1rem",
-              }}
-            >
-              Reach out
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}
-            >
-              {socialLinks.map((link) => (
-                <motion.a
-                  key={link.icon}
-                  href={link.href}
-                  target={link.icon !== "email" ? "_blank" : undefined}
-                  rel={link.icon !== "email" ? "noopener noreferrer" : undefined}
-                  aria-label={link.label}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    borderRadius: "50%",
-                    border: "1.5px solid rgba(0,0,0,0.3)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "border-color 0.3s ease, background-color 0.3s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,0,0,0.8)";
-                    (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "rgba(0,0,0,0.06)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,0,0,0.3)";
-                    (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "transparent";
-                  }}
-                >
-                  <svg
-                    viewBox={link.icon === "email" ? "0 0 24 24" : "0 0 24 24"}
-                    width="18"
-                    height="18"
-                    fill="var(--text-primary)"
+        {/* Pixel avatar */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: "30%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "clamp(120px, 15vw, 220px)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+          aria-hidden="true"
+        >
+          <img
+            ref={avatarRef}
+            src="/Portfolio/avatar.png"
+            alt="Sowmiya Narayanan S Avatar"
+            style={{ width: "100%", height: "auto", objectFit: "contain" }}
+          />
+        </div>
+
+        {/* CTA content */}
+        <div
+          style={{
+            maxWidth: "1400px",
+            margin: "0 auto",
+            padding: "4rem clamp(1.5rem, 5vw, 4rem)",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "80vh",
+            justifyContent: "flex-end",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              flexWrap: "wrap",
+              gap: "2rem",
+              width: "100%",
+            }}
+          >
+            {/* Left: CTA text */}
+            <div>
+              <p
+                ref={subTextRef}
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: "400",
+                  color: "rgba(0,0,0,0.7)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Let's build something
+              </p>
+              <h2
+                ref={headingRef}
+                className="display-md"
+                style={{ color: "var(--text-primary)", lineHeight: 1 }}
+              >
+                MEANINGFUL
+                <br />
+                AND MEMORABLE
+              </h2>
+            </div>
+
+            {/* Right: Social links */}
+            <div style={{ textAlign: "right" }}>
+              <p
+                ref={reachOutRef}
+                style={{
+                  fontSize: "0.8rem",
+                  color: "rgba(0,0,0,0.5)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  marginBottom: "1rem",
+                }}
+              >
+                Reach out
+              </p>
+              <div
+                ref={socialsRef}
+                style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}
+              >
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.icon}
+                    href={link.href}
+                    target={link.icon !== "email" ? "_blank" : undefined}
+                    rel={link.icon !== "email" ? "noopener noreferrer" : undefined}
+                    aria-label={link.label}
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      border: "1.5px solid rgba(0,0,0,0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,0,0,0.8)";
+                      (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "rgba(0,0,0,0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(0,0,0,0.3)";
+                      (e.currentTarget as HTMLAnchorElement).style.backgroundColor = "transparent";
+                    }}
                   >
-                    <path d={link.svgPath} />
-                  </svg>
-                </motion.a>
-              ))}
-            </motion.div>
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="18"
+                      height="18"
+                      fill="var(--text-primary)"
+                    >
+                      <path d={link.svgPath} />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -191,8 +191,8 @@ export function SkillsSection() {
           margin: "5rem auto 0",
           padding: "0 clamp(1.5rem, 5vw, 4rem) 6rem",
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "4rem",
+          gridTemplateColumns: "var(--skills-grid-cols, 1fr 1fr)",
+          gap: "var(--skills-grid-gap, 4rem)",
         }}
       >
         {/* Technical Skills */}

@@ -196,8 +196,12 @@ export function ParticleRippleBackground({ parentRef }: ParticleRippleBackground
     parent.addEventListener("mouseleave", handleMouseLeave);
     parent.addEventListener("click", handleClick);
 
+    let isIntersecting = false;
+
     // Core animation/physics update loop
     const animate = () => {
+      if (!isIntersecting) return;
+
       // Clear with soft, professional photography studio grey/cream gradient
       ctx.fillStyle = "#f5f4f0";
       ctx.fillRect(0, 0, width, height);
@@ -337,11 +341,26 @@ export function ParticleRippleBackground({ parentRef }: ParticleRippleBackground
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    // Use IntersectionObserver to start/stop the animation frame loop when parent enters/leaves viewport
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        isIntersecting = entry.isIntersecting;
+        if (isIntersecting) {
+          cancelAnimationFrame(animationFrameId);
+          animate();
+        } else {
+          cancelAnimationFrame(animationFrameId);
+        }
+      },
+      { threshold: 0.01 }
+    );
+
+    intersectionObserver.observe(parent);
 
     // Clean up all observers and listeners on unmount
     return () => {
       resizeObserver.disconnect();
+      intersectionObserver.disconnect();
       parent.removeEventListener("mousemove", handleMouseMove);
       parent.removeEventListener("mouseenter", handleMouseEnter);
       parent.removeEventListener("mouseleave", handleMouseLeave);

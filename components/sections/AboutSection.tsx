@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 /**
@@ -10,33 +10,13 @@ import { motion } from "framer-motion";
  */
 export function AboutSection() {
   const textRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isInView, setIsInView] = useState(false);
 
   const words =
-    "2+ years of building intelligent data solutions, AI-driven models, and real-world insights that actually matter.".split(
+    "years of building intelligent data solutions, AI-driven models, and real-world insights that actually matter.".split(
       " "
     );
-
-  useEffect(() => {
-    const textContainer = textRef.current;
-    if (!textContainer) return;
-
-    const wordEls = textContainer.querySelectorAll<HTMLSpanElement>(".scroll-word");
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-          }
-        });
-      },
-      { threshold: 0.5, rootMargin: "0px 0px -20% 0px" }
-    );
-
-    wordEls.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
 
   // GSAP scroll-triggered word reveal (sequential)
   useEffect(() => {
@@ -50,13 +30,20 @@ export function AboutSection() {
       const containerRect = textContainer.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
 
+      // Scroll-triggered reveal state for tech logos
+      if (containerRect.top < viewportHeight * 0.52) {
+        setIsInView(true);
+      } else if (containerRect.top > viewportHeight * 0.85) {
+        setIsInView(false);
+      }
+
       // How far through the section we've scrolled (0 to 1)
       const progress = Math.max(
         0,
         Math.min(
           1,
           (viewportHeight - containerRect.top) /
-            (viewportHeight + containerRect.height)
+          (viewportHeight + containerRect.height)
         )
       );
 
@@ -79,13 +66,39 @@ export function AboutSection() {
 
   return (
     <section
+      ref={sectionRef}
       style={{
         backgroundColor: "var(--dark)",
         position: "relative",
         zIndex: 2,
-        padding: "10rem clamp(1.5rem, 8vw, 8rem)",
+        padding: "10rem clamp(4.5rem, 9vw, 9rem)",
       }}
     >
+      {/* Python Logo - Left Side */}
+      <div className={`tech-logo-container tech-logo-left ${isInView ? "active" : ""}`}>
+        <img
+          src="/Portfolio/python.svg"
+          alt="Python Logo"
+          style={{
+            width: "55%",
+            height: "55%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
+
+      {/* Java Logo - Right Side */}
+      <div className={`tech-logo-container tech-logo-right ${isInView ? "active" : ""}`}>
+        <img
+          src="/Portfolio/java.svg"
+          alt="Java Logo"
+          style={{
+            width: "55%",
+            height: "55%",
+            objectFit: "contain",
+          }}
+        />
+      </div>
       <div
         ref={textRef}
         style={{

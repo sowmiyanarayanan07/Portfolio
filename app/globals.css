@@ -262,3 +262,104 @@
     font-size: clamp(2.5rem, 12vw, 5rem);
   }
 }
+
+/* Tech Logos Scroll Reveal */
+.tech-logo-container {
+  position: absolute;
+  top: 40%;
+  width: clamp(48px, 6.5vw, 85px);
+  height: clamp(48px, 6.5vw, 85px);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+  transition: all 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 3;
+  opacity: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.tech-logo-left {
+  left: clamp(0.75rem, 2.5vw, 4.5rem);
+  transform: scale(0) translateY(60px);
+}
+
+.tech-logo-right {
+  right: clamp(0.75rem, 2.5vw, 4.5rem);
+  transform: scale(0) translateY(60px);
+}
+
+/* Scroll reveal trigger */
+.tech-logo-container.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.tech-logo-left.active {
+  transition-delay: 300ms;
+}
+
+.tech-logo-right.active {
+  transition-delay: 600ms;
+}
+
+/* Hover dynamic scaling and glowing */
+.tech-logo-container:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 0 20px rgba(255, 255, 255, 0.06);
+  transform: scale(1.1) translateY(-6px) !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: 0ms !important;
+}
+
+/* Global Responsive Grid System & Border Adjustments */
+:root {
+  --projects-grid-cols: repeat(2, 1fr);
+  --skills-grid-cols: 1fr 1fr;
+  --skills-grid-gap: 4rem;
+  --experience-grid-cols: 1fr 2fr;
+  --experience-grid-gap: 3rem;
+}
+
+/* Responsive Grid and Typography Settings */
+@media (max-width: 768px) {
+  :root {
+    --projects-grid-cols: 1fr;
+    --skills-grid-cols: 1fr;
+    --skills-grid-gap: 2.5rem;
+    --experience-grid-cols: 1fr;
+    --experience-grid-gap: 1.5rem;
+  }
+  
+  /* Prevent large clamp headings from causing overflows */
+  .display-xl {
+    font-size: clamp(2rem, 10vw, 4rem) !important;
+    line-height: 1.0 !important;
+  }
+
+  .display-lg {
+    font-size: clamp(1.8rem, 8vw, 3rem) !important;
+    line-height: 1.05 !important;
+  }
+
+  .display-md {
+    font-size: clamp(1.5rem, 6vw, 2.2rem) !important;
+    line-height: 1.1 !important;
+  }
+}
+
+/* Project Card Responsive Borders */
+.project-card-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 769px) {
+  .project-card-item.odd-card {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+  }
+}

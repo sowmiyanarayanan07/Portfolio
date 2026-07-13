@@ -51,12 +51,11 @@ export function ExperienceSection() {
         {/* Section header */}
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
+            display: "grid",
+            gridTemplateColumns: "var(--experience-grid-cols, 1fr 2fr)",
+            gap: "var(--experience-grid-gap, 3rem)",
             marginBottom: "4rem",
-            flexWrap: "wrap",
-            gap: "1rem",
+            alignItems: "flex-end",
           }}
         >
           <motion.h2
@@ -100,8 +99,8 @@ export function ExperienceSection() {
               }}
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 2fr",
-                gap: "3rem",
+                gridTemplateColumns: "var(--experience-grid-cols, 1fr 2fr)",
+                gap: "var(--experience-grid-gap, 3rem)",
                 padding: "3rem 0",
                 borderBottom: "1px solid rgba(0,0,0,0.08)",
               }}

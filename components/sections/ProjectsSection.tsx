@@ -129,7 +129,7 @@ export function ProjectsSection() {
           maxWidth: "1400px",
           margin: "0 auto",
           display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
+          gridTemplateColumns: "var(--projects-grid-cols, repeat(2, 1fr))",
         }}
       >
         {projects.map((project, i) => {
@@ -292,8 +292,6 @@ export function ProjectsSection() {
 
           const sharedStyle: React.CSSProperties = {
             position: "relative",
-            borderRight: i % 2 === 0 ? "1px solid rgba(0,0,0,0.1)" : "none",
-            borderBottom: "1px solid rgba(0,0,0,0.1)",
             padding: "3rem clamp(1.5rem, 4vw, 3rem)",
             overflow: "hidden",
             cursor: isClickable ? "none" : "default",
@@ -326,6 +324,7 @@ export function ProjectsSection() {
                 }}
                 onHoverStart={() => setHoveredId(project.id)}
                 onHoverEnd={() => setHoveredId(null)}
+                className={`project-card-item ${i % 2 === 0 ? "odd-card" : ""}`}
                 style={sharedStyle}
               >
                 {cardContent}
@@ -346,6 +345,7 @@ export function ProjectsSection() {
               }}
               onHoverStart={() => setHoveredId(project.id)}
               onHoverEnd={() => setHoveredId(null)}
+              className={`project-card-item ${i % 2 === 0 ? "odd-card" : ""}`}
               style={sharedStyle}
             >
               {cardContent}

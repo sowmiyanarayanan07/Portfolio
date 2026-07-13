@@ -55,37 +55,24 @@ function MagneticLetter({
     };
 
     // Calculate initial position once layout has settled
-    const timeoutId = setTimeout(updateCenter, 150);
+    const timeoutId = setTimeout(updateCenter, 300);
 
     window.addEventListener("resize", updateCenter);
-    // Re-verify positions if scroll changes page layout flow
-    window.addEventListener("scroll", updateCenter, { passive: true });
 
     return () => {
       clearTimeout(timeoutId);
       window.removeEventListener("resize", updateCenter);
-      window.removeEventListener("scroll", updateCenter);
     };
   }, []);
 
   useEffect(() => {
-    let frameId: number;
-
-    const tick = () => {
-      const mCoords = mouseRef.current;
-      if (!mCoords) {
-        frameId = requestAnimationFrame(tick);
-        return;
-      }
-
-      const { x: mX, y: mY } = mCoords;
+    const handleMouseMove = (e: MouseEvent) => {
+      const mX = e.pageX;
+      const mY = e.pageY;
       const { x: cX, y: cY } = centerRef.current;
 
       // Skip calculation if positions aren't initialized yet
-      if (cX === 0 && cY === 0) {
-        frameId = requestAnimationFrame(tick);
-        return;
-      }
+      if (cX === 0 && cY === 0) return;
 
       const dx = mX - cX;
       const dy = mY - cY;
@@ -120,13 +107,23 @@ function MagneticLetter({
         rotate.set(0);
         scale.set(1);
       }
-
-      frameId = requestAnimationFrame(tick);
     };
 
-    frameId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameId);
-  }, [radius, strength, mode, yStrengthFactor, mouseRef]);
+    const handleMouseLeave = () => {
+      x.set(0);
+      y.set(0);
+      rotate.set(0);
+      scale.set(1);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    document.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, [radius, strength, mode, yStrengthFactor]);
 
   return (
     <motion.span

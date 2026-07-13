@@ -46,29 +46,10 @@ export function ServicesSection() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const totalBars = 5;
-
-  const curtainVariants = {
-    hidden: {
-      scaleY: 1,
-      transition: {
-        duration: 0.3, // Fast cover-up when scrolling out
-        ease: "easeOut" as const,
-      },
-    },
-    visible: (index: number) => ({
-      scaleY: 0,
-      transition: {
-        duration: 2.0, // Slow, premium reveal
-        delay: index * 0.15,
-        ease: [0.76, 0, 0.24, 1] as const,
-      },
-    }),
-  };
-
   const imageVariants = {
     hidden: {
-      scale: 1.15,
+      scale: 1.1,
+      opacity: 0,
       transition: {
         duration: 0.3, // Fast zoom reset when scrolling out
         ease: "easeOut" as const,
@@ -76,9 +57,10 @@ export function ServicesSection() {
     },
     visible: {
       scale: 1,
+      opacity: 1,
       transition: {
-        duration: 2.2, // Slow zoom reveal
-        delay: 0.45,
+        duration: 1.6, // Slow zoom/fade reveal
+        delay: 0.25,
         ease: [0.22, 1, 0.36, 1] as const,
       },
     },
@@ -97,33 +79,6 @@ export function ServicesSection() {
     >
       {/* Interactive canvas particle background */}
       <ParticleRippleBackground parentRef={sectionRef} />
-      {/* 5-Column Curtain Reveal Overlay (staggered bars) */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          zIndex: 100,
-          display: "grid",
-          gridTemplateColumns: `repeat(${totalBars}, 1fr)`,
-          pointerEvents: "none",
-        }}
-        aria-hidden="true"
-      >
-        {Array.from({ length: totalBars }).map((_, index) => (
-          <motion.div
-            key={index}
-            custom={index}
-            variants={curtainVariants}
-            initial="hidden"
-            animate={isRevealed ? "visible" : "hidden"}
-            style={{
-              height: "100%",
-              backgroundColor: "var(--cream)", // Fades/slides from the Hero background
-              transformOrigin: "bottom", // Collapses downwards
-            }}
-          />
-        ))}
-      </div>
 
       {/* Dynamic particle grid canvas functions as the background pattern */}
 
